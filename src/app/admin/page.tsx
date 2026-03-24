@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import * as XLSX from 'xlsx';
 import { db } from '@/lib/insforge';
 import { ThemeId, ProgramItem, Event } from '@/types';
 import { themes } from '@/lib/themes';
-import { Upload, Plus, Trash2, Settings, Users, Palette, Sparkles, List, Edit2, Copy, Play } from 'lucide-react';
+import { Upload, Plus, Trash2, Settings, Users, Palette, Sparkles, List, Edit2, Copy, Play, LogOut } from 'lucide-react';
 
 const SECTION_LABELS: Record<string, string> = {
     program: 'Programa del Evento',
@@ -29,6 +30,7 @@ const defaultVisibility = {
 };
 
 export default function AdminPage() {
+    const router = useRouter(); 
     const [tab, setTab] = useState<'list' | 'event' | 'details' | 'guests' | 'style'>('list');
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState('');
@@ -220,6 +222,16 @@ export default function AdminPage() {
         XLSX.writeFile(wb, `invitaciones_${eventSlug}.xlsx`);
     };
 
+    const handleLogout = async () => {
+        try {
+            await fetch('/api/auth/logout', { method: 'POST' });
+            router.push('/admin/login');
+            router.refresh();
+        } catch (error) {
+            console.error('Error logging out:', error);
+        }
+    };
+
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
         setMessage('✅ Liga general de registro copiada al portapapeles');
@@ -255,11 +267,7 @@ export default function AdminPage() {
                 const { error: eventError } = await db.from('events').update(payload).eq('id', eventId);
                 if (eventError) { setMessage(`❌ Error al actualizar: ${eventError.message}`); setSaving(false); return; }
 
-                // Update guests: easiest way is to delete missing ones, and insert new ones.
-                // But to preserve confirm status, it's safer to only insert new ones.
-                // We'll delete all guests and reinsert them for simplicity unless they already exist?
-                // Actually, deleting all guests would erase their confirmations!
-                // So we only insert guests that don't exist by matching slugs.
+                // Update guests
                 const { data: currentGuests } = await db.from('guests').select('unique_slug').eq('event_id', eventId);
                 const existingSlugs = new Set((currentGuests || []).map(g => g.unique_slug));
 
@@ -284,7 +292,6 @@ export default function AdminPage() {
 
                 eventId = (eventData as Array<{ id: string }>)?.[0]?.id;
 
-                // Fix: Force setEditEventId so subsequent saves map to 'update'
                 setEditEventId(eventId);
 
                 if (eventId && guests.length > 0) {
@@ -318,12 +325,20 @@ export default function AdminPage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <span style={{ fontSize: '1.25rem', fontWeight: 900, color: '#d4a843', fontFamily: 'serif' }}>✨ Magic Invitations</span>
                 </div>
-                <button
-                    onClick={() => setTab('list')}
-                    style={{ background: 'transparent', border: '1px solid #d4a843', color: '#d4a843', padding: '0.5rem 1rem', borderRadius: '0.5rem', fontSize: '0.8rem', cursor: 'pointer', display: 'flex', gap: '0.4rem', alignItems: 'center' }}
-                >
-                    <List size={16} /> Mis Eventos
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <button
+                        onClick={() => setTab('list')}
+                        style={{ background: 'transparent', border: '1px solid #d4a843', color: '#d4a843', padding: '0.4rem 0.8rem', borderRadius: '0.5rem', fontSize: '0.8rem', cursor: 'pointer', display: 'flex', gap: '0.4rem', alignItems: 'center' }}
+                    >
+                        <List size={16} /> Mis Eventos
+                    </button>
+                    <button
+                        onClick={handleLogout}
+                        style={{ background: 'rgba(255, 107, 107, 0.1)', border: '1px solid #ff6b6b', color: '#ff6b6b', padding: '0.4rem 0.8rem', borderRadius: '0.5rem', fontSize: '0.8rem', cursor: 'pointer', display: 'flex', gap: '0.4rem', alignItems: 'center' }}
+                    >
+                        <LogOut size={16} /> Salir
+                    </button>
+                </div>
             </div>
 
             {message && (
@@ -406,7 +421,7 @@ export default function AdminPage() {
                         ))}
                     </div>
 
-                    {/* Form Contents (Reuse previous structure with minor tweaks) */}
+                    {/* Form Contents */}
                     {tab === 'event' && (
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                             <h2 style={{ color: '#d4a843', fontFamily: 'serif', fontSize: '1.25rem' }}>📋 Configuración Básica</h2>
@@ -419,29 +434,28 @@ export default function AdminPage() {
                                 { key: 'location_name', label: 'Lugar del Evento', placeholder: 'Ej: Salón Kidzplania, CDMX' },
                                 { key: 'location_url', label: 'Link de Google Maps', placeholder: 'https://maps.google.com/...' },
                                 { key: 'event_slug', label: 'Identificador del evento (URL) *', placeholder: 'Ej: cumple-carlitos' },
+                                { key: 'special_message', label: 'Mensaje Especial (Para los invitados)', textarea: true },
                             ].map(field => (
                                 <div key={field.key}>
                                     <label style={labelStyle}>{field.label}</label>
-                                    <input
-                                        type={(field as { type?: string }).type || 'text'}
-                                        value={eventForm[field.key as keyof typeof eventForm]}
-                                        onChange={e => setEventForm(prev => ({ ...prev, [field.key]: e.target.value }))}
-                                        placeholder={field.placeholder}
-                                        style={inputStyle}
-                                    />
+                                    {field.textarea ? (
+                                        <textarea
+                                            value={eventForm[field.key as keyof typeof eventForm]}
+                                            onChange={e => setEventForm(prev => ({ ...prev, [field.key]: e.target.value }))}
+                                            rows={3}
+                                            style={{ ...inputStyle, resize: 'vertical' }}
+                                        />
+                                    ) : (
+                                        <input
+                                            type={(field as { type?: string }).type || 'text'}
+                                            value={eventForm[field.key as keyof typeof eventForm]}
+                                            onChange={e => setEventForm(prev => ({ ...prev, [field.key]: e.target.value }))}
+                                            placeholder={field.placeholder}
+                                            style={inputStyle}
+                                        />
+                                    )}
                                 </div>
                             ))}
-
-                            <div>
-                                <label style={labelStyle}>✉️ Mensaje Especial (Para los invitados)</label>
-                                <textarea
-                                    value={eventForm.special_message}
-                                    onChange={e => setEventForm(prev => ({ ...prev, special_message: e.target.value }))}
-                                    placeholder="Escribe un mensaje emotivo para tus invitados..."
-                                    rows={3}
-                                    style={{ ...inputStyle, resize: 'vertical' }}
-                                />
-                            </div>
 
                             <h3 style={{ color: '#d4a843', fontFamily: 'serif', marginTop: '1rem' }}>👁️ Visibilidad de Secciones Opcionales</h3>
                             <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: '0.5rem' }}>
@@ -460,7 +474,6 @@ export default function AdminPage() {
                         </motion.div>
                     )}
 
-                    {/* Detalles Tab (same as before) */}
                     {tab === 'details' && (
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                             <div>
@@ -515,14 +528,6 @@ export default function AdminPage() {
                             </div>
 
                             <div>
-                                <h2 style={{ color: '#d4a843', fontFamily: 'serif', fontSize: '1.15rem' }}>🎵 Música y Playlists</h2>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: '1rem', marginTop: '0.5rem' }}>
-                                    <div><label style={labelStyle}>Spotify</label><input value={musicUrls.spotify} onChange={e => setMusicUrls(p => ({ ...p, spotify: e.target.value }))} placeholder="https://..." style={inputStyle} /></div>
-                                    <div><label style={labelStyle}>YouTube</label><input value={musicUrls.youtube} onChange={e => setMusicUrls(p => ({ ...p, youtube: e.target.value }))} placeholder="https://..." style={inputStyle} /></div>
-                                </div>
-                            </div>
-
-                            <div>
                                 <h2 style={{ color: '#d4a843', fontFamily: 'serif', fontSize: '1.15rem' }}>🖼️ Galería (URLs de Fotos)</h2>
                                 <label style={labelStyle}>Pega las URLs (una por línea)</label>
                                 <textarea value={galleryUrlsText} onChange={e => setGalleryUrlsText(e.target.value)} rows={4} style={{ ...inputStyle, resize: 'vertical', marginTop: '0.5rem' }} />
@@ -544,13 +549,11 @@ export default function AdminPage() {
                             <div style={{ maxHeight: '40vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                 {guests.map((g, i) => (
                                     <div key={i} style={{ background: '#1a1a1a', border: '1px solid #3a2e1a', borderRadius: '0.5rem', padding: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <span style={{ fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '60%' }}>{g.name}</span>
+                                        <span style={{ fontSize: '0.9rem' }}>{g.name}</span>
                                         <button onClick={() => setGuests(prev => prev.filter((_, idx) => idx !== i))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ff6b6b' }}><Trash2 size={16} /></button>
                                     </div>
                                 ))}
-                                {!guests.length && <p style={{ color: '#a08050', textAlign: 'center', padding: '2rem', fontSize: '0.9rem' }}>Aún no hay invitados. Agrégalos arriba o carga un Excel.</p>}
                             </div>
-                            <p style={{ color: '#a08050', fontSize: '0.8rem', textAlign: 'center' }}>{guests.length} invitado(s) en lista</p>
                         </motion.div>
                     )}
 
@@ -559,11 +562,11 @@ export default function AdminPage() {
                             <h2 style={{ color: '#d4a843', fontFamily: 'serif', fontSize: '1.25rem', marginBottom: '1rem' }}>🎨 Estilo de la Invitación</h2>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                                 {Object.values(themes).map(theme => (
-                                    <button key={theme.id} onClick={() => setSelectedStyle(theme.id)} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', borderRadius: '0.75rem', background: selectedStyle === theme.id ? theme.accent + '22' : '#1a1a1a', border: `2px solid ${selectedStyle === theme.id ? theme.accent : '#3a2e1a'}`, cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'all 0.2s' }}>
+                                    <button key={theme.id} onClick={() => setSelectedStyle(theme.id)} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', borderRadius: '0.75rem', background: selectedStyle === theme.id ? theme.accent + '22' : '#1a1a1a', border: `2px solid ${selectedStyle === theme.id ? theme.accent : '#3a2e1a'}`, cursor: 'pointer', textAlign: 'left', width: '100%' }}>
                                         <span style={{ fontSize: '1.75rem' }}>{theme.emoji}</span>
                                         <div style={{ flex: 1 }}>
-                                            <p style={{ color: theme.accent, fontWeight: 700, fontSize: '0.95rem' }}>{theme.name}</p>
-                                            <p style={{ color: '#a08050', fontSize: '0.75rem', display: 'block', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{theme.description}</p>
+                                            <p style={{ color: theme.accent, fontWeight: 700 }}>{theme.name}</p>
+                                            <p style={{ color: '#a08050', fontSize: '0.75rem' }}>{theme.description}</p>
                                         </div>
                                     </button>
                                 ))}
@@ -572,10 +575,10 @@ export default function AdminPage() {
                     )}
 
                     {/* Save Button */}
-                    <div style={{ marginTop: '2rem', paddingTop: '1rem', borderTop: '1px solid #3a2e1a', position: 'sticky', bottom: '1rem' }}>
+                    <div style={{ marginTop: '2rem', paddingTop: '1rem', borderTop: '1px solid #3a2e1a' }}>
                         <button
                             onClick={handleSave} disabled={saving}
-                            style={{ width: '100%', background: '#d4a843', color: '#0a0a0a', border: 'none', borderRadius: '0.75rem', padding: '1rem', fontWeight: 700, fontSize: '1rem', cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'serif', opacity: saving ? 0.7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}
+                            style={{ width: '100%', background: '#d4a843', color: '#0a0a0a', border: 'none', borderRadius: '0.75rem', padding: '1rem', fontWeight: 700, fontSize: '1rem', cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'serif', opacity: saving ? 0.7 : 1 }}
                         >
                             {saving ? '⏳ Guardando...' : (editEventId ? '💾 Actualizar Evento y Lista' : '🚀 Crear Evento y Exportar Ligas')}
                         </button>
