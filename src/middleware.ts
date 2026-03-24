@@ -4,7 +4,6 @@ import { decrypt } from '@/lib/auth';
 // Definir rutas protegidas
 const adminPath = '/admin';
 const loginPath = '/admin/login';
-const apiAuthPath = '/api/auth';
 
 export async function middleware(request: NextRequest) {
     const { nextUrl } = request;
@@ -13,7 +12,7 @@ export async function middleware(request: NextRequest) {
     // 1. Evitar recursión en la página de login
     if (path === loginPath) return NextResponse.next();
 
-// Proteger RUTAS de /admin O la raíz (/)
+    // Proteger RUTAS de /admin O la raíz (/)
     if (path === '/' || path.startsWith(adminPath)) {
         const session = request.cookies.get('session')?.value;
 

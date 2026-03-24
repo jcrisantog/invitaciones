@@ -1,33 +1,33 @@
-const bcrypt = require('bcryptjs');
 const fs = require('fs');
+const path = require('path');
 
-async function fixEnv() {
-    const password = 'DameMiAguinaldo01';
-    const salt = await bcrypt.genSalt(10);
-    const hash = await bcrypt.hash(password, salt);
-    const hashHex = Buffer.from(hash).toString('hex');
-    const secret = require('crypto').randomBytes(32).toString('hex');
+const envPath = path.join(process.cwd(), '.env.local');
 
-    let content = fs.readFileSync('.env.local', 'utf8');
-    
-    // Actualizar Username
-    content = content.replace(/ADMIN_USERNAME=.*/, "ADMIN_USERNAME='jcrisantogAdmin'");
-    
-    // Agregar o actualizar HASH_HEX
-    if (content.includes('ADMIN_PASSWORD_HASH_HEX')) {
-        content = content.replace(/ADMIN_PASSWORD_HASH_HEX=.*/, `ADMIN_PASSWORD_HASH_HEX='${hashHex}'`);
-    } else {
-        content += `\nADMIN_PASSWORD_HASH_HEX='${hashHex}'`;
+function fixEnv() {
+    if (!fs.existsSync(envPath)) {
+        console.log('No se encontró .env.local');
+        return;
     }
-    
-    // Eliminar el HASH viejo para evitar confusiones
-    content = content.replace(/ADMIN_PASSWORD_HASH=.*\n?/, '');
-    
-    // Actualizar Secret
-    content = content.replace(/JWT_SECRET=.*/, `JWT_SECRET='${secret}'`);
 
-    fs.writeFileSync('.env.local', content);
-    console.log('✅ .env.local actualizado con éxito con formato HEX.');
+    let content = fs.readFileSync(envPath, 'utf8');
+    
+    // Buscar si existe ADMIN_PASSWORD_HASH con símbolos $
+    // En Windows/Next.js esto suele causar problemas si no se escapa.
+    // La solución es usar la versión HEX que ya implementamos.
+    
+    if (content.includes('ADMIN_PASSWORD_HASH=$')) {
+        console.log('Detectado hash con símbolos $ en .env.local. Se recomienda usar ADMIN_PASSWORD_HASH_HEX.');
+        console.log('Asegúrate de ejecutar: node scripts/generate-auth.js TU_CONTRASEÑA');
+    }
+
+    console.log('\n--- ESTADO DE .env.local ---');
+    const lines = content.split('\n');
+    lines.forEach(line => {
+        if (line.startsWith('ADMIN_') || line.startsWith('JWT_')) {
+            const [key] = line.split('=');
+            console.log(`✅ ${key} está presente.`);
+        }
+    });
 }
 
 fixEnv();
