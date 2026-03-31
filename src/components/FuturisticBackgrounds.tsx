@@ -4,6 +4,8 @@ import { motion } from 'framer-motion';
 import { ThemeId } from '@/types';
 import { useEffect, useState } from 'react';
 import Ballpit from './Ballpit';
+import Aurora from './Aurora';
+
 
 
 export function FuturisticBackgrounds({ themeId }: { themeId: ThemeId }) {
@@ -273,6 +275,28 @@ export function FuturisticBackgrounds({ themeId }: { themeId: ThemeId }) {
                         colors={["#e629ff", "#f075d9", "#a205ad"]}
                     />
                 </div>
+            </div>
+        );
+    }
+
+    if (themeId === 'kpop') {
+        return (
+            <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden bg-[#0A001A]">
+                <img
+                    src="/kpop/background.jpg"
+                    alt=""
+                    className="absolute inset-0 w-full h-full object-cover"
+                    style={{ opacity: 0.85 }}
+                />
+                <div className="absolute inset-0 z-10 pointer-events-none" style={{ opacity: 0.6 }}>
+                    <Aurora
+                        colorStops={['#ff0080', '#7928ca', '#00f2ff']}
+                        amplitude={1.3}
+                        blend={0.4}
+                        speed={1.5}
+                    />
+                </div>
+                <div className="absolute inset-0 z-20 bg-gradient-to-b from-black/20 via-transparent to-black/60" />
             </div>
         );
     }
