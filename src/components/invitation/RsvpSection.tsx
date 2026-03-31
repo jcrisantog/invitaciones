@@ -94,7 +94,7 @@ export function RsvpSection({ event, guest, onInView }: RsvpSectionProps) {
                                     border: '1px solid var(--border-color)',
                                     color: 'var(--text-primary)',
                                     fontFamily: 'var(--font-body)',
-                                    fontSize: '1.5rem',
+                                    fontSize: '1.1rem',
                                     marginTop: '0.5rem',
                                     marginBottom: '0.5rem',
                                 }}
@@ -113,7 +113,7 @@ export function RsvpSection({ event, guest, onInView }: RsvpSectionProps) {
                                     >—</button>
                                     <span className="flex-1 text-center font-bold text-xl theme-text-primary">{adults}</span>
                                     <button
-                                        onClick={() => setAdults(prev => Math.min(3, prev + 1))}
+                                        onClick={() => setAdults(prev => Math.min(5, prev + 1))}
                                         className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-white/5 active:scale-90 transition-transform text-2xl font-light theme-text-primary"
                                     >+</button>
                                 </div>
@@ -131,7 +131,7 @@ export function RsvpSection({ event, guest, onInView }: RsvpSectionProps) {
                                     >—</button>
                                     <span className="flex-1 text-center font-bold text-xl theme-text-primary">{kids}</span>
                                     <button
-                                        onClick={() => setKids(prev => Math.min(3, prev + 1))}
+                                        onClick={() => setKids(prev => Math.min(5, prev + 1))}
                                         className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-white/5 active:scale-90 transition-transform text-2xl font-light theme-text-primary"
                                     >+</button>
                                 </div>

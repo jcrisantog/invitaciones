@@ -163,6 +163,23 @@ export const themes: Record<ThemeId, Theme> = {
         borderColor: 'rgba(255, 255, 255, 0.25)',
         bgImage: '/butterfly/background.png',
     },
+    spiderman: {
+        id: 'spiderman',
+        name: 'Spiderman',
+        emoji: '🕷️',
+        description: 'Rojo heroico, azul y estilo ciudad urbana',
+        bgPrimary: '#0f172a',
+        bgSecondary: 'rgba(15, 23, 42, 0.85)',
+        bgCard: 'rgba(30, 41, 59, 0.75)',
+        textPrimary: '#ffffff',
+        textSecondary: '#cbd5e1',
+        accent: '#dc2626',
+        accentSecondary: '#2563eb',
+        fontTitle: "'Bangers', cursive",
+        fontBody: "'Montserrat', sans-serif",
+        borderColor: '#dc2626',
+        bgImage: '/spiderman/background.jpg',
+    },
 };
 
 export const getTheme = (id: ThemeId): Theme => themes[id] ?? themes['gold-premium'];

@@ -1,10 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mail } from 'lucide-react';
 
-export function SpecialMessageSection({ message }: { message: string }) {
+export function SpecialMessageSection({ 
+    message, 
+    renderButton 
+}: { 
+    message: string, 
+    renderButton?: (onClick: () => void) => ReactNode 
+}) {
     const [open, setOpen] = useState(false);
     return (
         <div className="text-center">
@@ -12,9 +18,13 @@ export function SpecialMessageSection({ message }: { message: string }) {
                 <div className="theme-title-container">
                     <h2 className="theme-section-title mb-4">— Mensaje Especial —</h2>
                 </div>
-                <button type="button" onClick={() => setOpen(true)} className="theme-btn-secondary mx-auto">
-                    <Mail size={18} /> Leer Mensaje
-                </button>
+                {renderButton ? (
+                    renderButton(() => setOpen(true))
+                ) : (
+                    <button type="button" onClick={() => setOpen(true)} className="theme-btn-secondary mx-auto">
+                        <Mail size={18} /> Leer Mensaje
+                    </button>
+                )}
             </motion.div>
 
             {open && (

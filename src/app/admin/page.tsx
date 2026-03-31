@@ -222,6 +222,33 @@ export default function AdminPage() {
         XLSX.writeFile(wb, `invitaciones_${eventSlug}.xlsx`);
     };
 
+    const downloadConfirmationsReport = async (eventId: string, eventSlug: string) => {
+        setMessage('⏳ Generando reporte de confirmaciones...');
+        const { data: reportGuests, error } = await db.from('guests').select('*').eq('event_id', eventId);
+        
+        if (error || !reportGuests) {
+            setMessage(`❌ Error al obtener confirmaciones: ${error?.message || 'Sin datos'}`);
+            setTimeout(() => setMessage(''), 4000);
+            return;
+        }
+
+        const rows = reportGuests.map(g => ({
+            'Nombre del Invitado': g.name,
+            'Confirmado': g.confirmed ? 'Sí' : 'No',
+            'Fecha de Confirmación': g.confirmed_at ? new Date(g.confirmed_at).toLocaleString('es-MX') : '',
+            'Adultos': g.adults_count || 0,
+            'Niños': g.kids_count || 0,
+            'Liga': `${window.location.origin}/i/${eventSlug}/${g.unique_slug}`
+        }));
+
+        const ws = XLSX.utils.json_to_sheet(rows);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Confirmaciones');
+        XLSX.writeFile(wb, `confirmaciones_${eventSlug}.xlsx`);
+        setMessage('✅ Reporte generado exitosamente');
+        setTimeout(() => setMessage(''), 3000);
+    };
+
     const handleLogout = async () => {
         try {
             await fetch('/api/auth/logout', { method: 'POST' });
@@ -285,25 +312,33 @@ export default function AdminPage() {
                 }
 
                 setMessage(`✅ Evento "${eventForm.celebrant_name}" actualizado. ${newGuestsToInsert.length} invitados nuevos.`);
+                setTimeout(() => setMessage(''), 5000);
             } else {
                 // Modo Creación
                 const { data: eventData, error: eventError } = await db.from('events').insert([payload]).select();
-                if (eventError) { setMessage(`❌ Error de evento: ${eventError.message}`); setSaving(false); return; }
+                if (eventError) { 
+                    setMessage(`❌ Error de evento: ${eventError.message}`); 
+                    setSaving(false); 
+                    return; 
+                }
 
                 eventId = (eventData as Array<{ id: string }>)?.[0]?.id;
-
                 setEditEventId(eventId);
 
                 if (eventId && guests.length > 0) {
                     const guestRows = guests.map(g => ({ event_id: eventId, name: g.name, unique_slug: g.unique_slug }));
                     const { error: gError } = await db.from('guests').insert(guestRows);
-                    if (gError) { setMessage(`⚠️ Evento creado, error en invitados: ${gError.message}`); setSaving(false); return; }
+                    if (gError) { 
+                        setMessage(`⚠️ Evento creado, error en invitados: ${gError.message}`); 
+                        setSaving(false); 
+                        return; 
+                    }
                 }
 
                 setMessage(`✅ Evento "${eventForm.celebrant_name}" creado exitosamente.`);
+                setTimeout(() => setMessage(''), 5000);
             }
 
-            exportToExcel(slug);
         } catch (e: any) {
             setMessage(`❌ Excepción: ${e.message}`);
         } finally {
@@ -389,6 +424,9 @@ export default function AdminPage() {
                                         </button>
                                         <button onClick={() => exportToExcel(evt.event_slug)} style={{ background: '#111', border: '1px solid #d4a843', color: '#d4a843', padding: '0.5rem 1rem', borderRadius: '0.5rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem' }}>
                                             <Upload size={14} /> Re-Exportar Lista Invitados
+                                        </button>
+                                        <button onClick={() => downloadConfirmationsReport(evt.id, evt.event_slug)} style={{ background: '#111', border: '1px solid #4ade80', color: '#4ade80', padding: '0.5rem 1rem', borderRadius: '0.5rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem' }}>
+                                            <Users size={14} /> Reporte Confirmados
                                         </button>
                                     </div>
                                 </div>
@@ -528,6 +566,20 @@ export default function AdminPage() {
                             </div>
 
                             <div>
+                                <h2 style={{ color: '#d4a843', fontFamily: 'serif', fontSize: '1.15rem' }}>🎵 Música (Spotify / YouTube)</h2>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: '1rem', marginTop: '0.5rem' }}>
+                                    <div>
+                                        <label style={labelStyle}>Link Spotify</label>
+                                        <input value={musicUrls.spotify} onChange={e => setMusicUrls(p => ({ ...p, spotify: e.target.value }))} placeholder="https://open.spotify.com/..." style={inputStyle} />
+                                    </div>
+                                    <div>
+                                        <label style={labelStyle}>Link YouTube</label>
+                                        <input value={musicUrls.youtube} onChange={e => setMusicUrls(p => ({ ...p, youtube: e.target.value }))} placeholder="https://youtube.com/..." style={inputStyle} />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
                                 <h2 style={{ color: '#d4a843', fontFamily: 'serif', fontSize: '1.15rem' }}>🖼️ Galería (URLs de Fotos)</h2>
                                 <label style={labelStyle}>Pega las URLs (una por línea)</label>
                                 <textarea value={galleryUrlsText} onChange={e => setGalleryUrlsText(e.target.value)} rows={4} style={{ ...inputStyle, resize: 'vertical', marginTop: '0.5rem' }} />
@@ -576,12 +628,22 @@ export default function AdminPage() {
 
                     {/* Save Button */}
                     <div style={{ marginTop: '2rem', paddingTop: '1rem', borderTop: '1px solid #3a2e1a' }}>
-                        <button
-                            onClick={handleSave} disabled={saving}
-                            style={{ width: '100%', background: '#d4a843', color: '#0a0a0a', border: 'none', borderRadius: '0.75rem', padding: '1rem', fontWeight: 700, fontSize: '1rem', cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'serif', opacity: saving ? 0.7 : 1 }}
-                        >
-                            {saving ? '⏳ Guardando...' : (editEventId ? '💾 Actualizar Evento y Lista' : '🚀 Crear Evento y Exportar Ligas')}
-                        </button>
+                        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                            <button
+                                onClick={handleSave} disabled={saving}
+                                style={{ flex: 1, minWidth: '200px', background: '#d4a843', color: '#0a0a0a', border: 'none', borderRadius: '0.75rem', padding: '1rem', fontWeight: 700, fontSize: '1rem', cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'serif', opacity: saving ? 0.7 : 1 }}
+                            >
+                                {saving ? '⏳ Guardando...' : (editEventId ? '💾 Guardar Cambios' : '🚀 Crear Evento')}
+                            </button>
+                            {editEventId && (
+                                <button
+                                    onClick={() => exportToExcel(eventForm.event_slug)} 
+                                    style={{ flex: 1, minWidth: '200px', background: '#111', color: '#d4a843', border: '2px solid #d4a843', borderRadius: '0.75rem', padding: '1rem', fontWeight: 700, fontSize: '1rem', cursor: 'pointer', fontFamily: 'serif', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                                >
+                                    <Upload size={18} /> Exportar Ligas
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
             )}

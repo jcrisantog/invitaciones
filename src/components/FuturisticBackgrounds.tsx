@@ -277,5 +277,21 @@ export function FuturisticBackgrounds({ themeId }: { themeId: ThemeId }) {
         );
     }
 
+    if (themeId === 'spiderman') {
+        return (
+            <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden" style={{ backgroundColor: '#0f172a' }}>
+                <div
+                    className="absolute inset-0 z-0"
+                    style={{
+                        backgroundImage: 'url(/spiderman/background.jpg)',
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                    }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-red-950/20" />
+            </div>
+        );
+    }
+
     return null;
 }

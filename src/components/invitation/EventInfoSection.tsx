@@ -7,9 +7,10 @@ import { MapPin, Clock, Calendar, Gamepad2, Map, Timer } from 'lucide-react';
 interface EventInfoSectionProps {
     event: Event;
     themeId?: string;
+    renderMapsButton?: (url: string) => React.ReactNode;
 }
 
-export function EventInfoSection({ event, themeId }: EventInfoSectionProps) {
+export function EventInfoSection({ event, themeId, renderMapsButton }: EventInfoSectionProps) {
     const rawDate = new Date(event.event_date).toLocaleDateString('es-MX', {
         weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
     });
@@ -88,10 +89,14 @@ export function EventInfoSection({ event, themeId }: EventInfoSectionProps) {
                 </div>
             )}
             <div className="grid grid-cols-2 gap-3 mt-4">
-                <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="theme-btn-primary text-sm" style={{ fontFamily: 'var(--font-title)', backgroundColor: '#87278C', color: '#ffffff' }}>
-                    📍 Cómo Llegar
-                </a>
-                <a href={calendarUrl()} target="_blank" rel="noopener noreferrer" className="theme-btn-secondary text-sm">
+                {renderMapsButton ? (
+                    renderMapsButton(mapsUrl)
+                ) : (
+                    <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="theme-btn-primary text-sm flex items-center justify-center gap-2" style={{ fontFamily: 'var(--font-title)', backgroundColor: '#87278C', color: '#ffffff' }}>
+                        📍 Cómo Llegar
+                    </a>
+                )}
+                <a href={calendarUrl()} target="_blank" rel="noopener noreferrer" className="theme-btn-secondary text-sm flex items-center justify-center gap-2">
                     📅 Calendario
                 </a>
             </div>

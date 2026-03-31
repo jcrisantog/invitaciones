@@ -65,7 +65,7 @@ export interface Guest {
     confirmed_at?: string;
 }
 
-export type ThemeId = 'gold-premium' | 'superhero' | 'princess' | 'unicorn' | 'kpop' | 'cyber-neon' | 'aurora-minimal' | 'stellar-dark' | 'gamer-neon' | 'butterfly';
+export type ThemeId = 'gold-premium' | 'superhero' | 'princess' | 'unicorn' | 'kpop' | 'cyber-neon' | 'aurora-minimal' | 'stellar-dark' | 'gamer-neon' | 'butterfly' | 'spiderman';
 
 export interface Theme {
     id: ThemeId;
