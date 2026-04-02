@@ -15,7 +15,7 @@ import { GiftsSection } from '@/components/invitation/GiftsSection';
 import { MusicSection } from '@/components/invitation/MusicSection';
 import { ConfirmedCountSection } from '@/components/invitation/ConfirmedCountSection';
 import { RsvpSection } from '@/components/invitation/RsvpSection';
-import { ImageSequenceBackground } from '@/components/ImageSequenceBackground';
+import { VideoBackground } from '@/components/VideoBackground';
 import { BackgroundMusic } from '@/components/BackgroundMusic';
 
 interface GokuUltraInstintoTemplateProps {
@@ -39,12 +39,8 @@ export function GokuUltraInstintoTemplate({ event, guest, galleryUrls, confirmed
     return (
         <ThemeEngine theme={theme}>
             <div className="min-h-screen relative overflow-hidden" style={{ fontFamily: theme.fontBody }}>
-                {/* Background Video Sequence */}
-                <ImageSequenceBackground 
-                    folderPath="/goku-ultrainstinto" 
-                    frameCount={70} 
-                    fps={24} 
-                />
+                {/* Background Video (MP4) - Ultra High Performance */}
+                <VideoBackground videoPath="/goku-ultrainstinto/video.mp4" />
 
                 {/* Background Music Handler */}
                 {event.music_urls.background_music && (
