@@ -181,6 +181,22 @@ export const themes: Record<ThemeId, Theme> = {
         borderColor: '#dc2626',
         bgImage: '/spiderman/background.jpg',
     },
+    'goku-ultrainstinto': {
+        id: 'goku-ultrainstinto',
+        name: 'Goku Ultra Instinto',
+        emoji: '🔥',
+        description: 'Blanco radiante, plata y azul profundo',
+        bgPrimary: '#000000',
+        bgSecondary: 'rgba(23, 27, 44, 0.7)',
+        bgCard: 'rgba(230, 235, 255, 0.1)',
+        textPrimary: '#ffffff',
+        textSecondary: '#a5bdf8',
+        accent: '#e2e8f0',
+        accentSecondary: '#3b82f6',
+        fontTitle: "'Bangers', cursive", // Editable via themes
+        fontBody: "'Montserrat', sans-serif",
+        borderColor: '#94a3b8',
+    },
 };
 
 export const getTheme = (id: ThemeId): Theme => themes[id] ?? themes['gold-premium'];

@@ -74,7 +74,7 @@ export default function AdminPage() {
         liverpool: '', amazon: '', bank_name: '', bank_holder: '', bank_account: '', bank_clabe: ''
     });
 
-    const [musicUrls, setMusicUrls] = useState({ spotify: '', youtube: '' });
+    const [musicUrls, setMusicUrls] = useState({ spotify: '', youtube: '', background_music: '' });
 
     useEffect(() => {
         if (tab === 'list') {
@@ -99,7 +99,7 @@ export default function AdminPage() {
         setGalleryUrlsText('');
         setDressCode({ recommended: '', avoid: '' });
         setGiftRegistry({ liverpool: '', amazon: '', bank_name: '', bank_holder: '', bank_account: '', bank_clabe: '' });
-        setMusicUrls({ spotify: '', youtube: '' });
+        setMusicUrls({ spotify: '', youtube: '', background_music: '' });
         setGuests([]);
         setSelectedStyle('gold-premium');
         setVisibility(defaultVisibility);
@@ -144,7 +144,8 @@ export default function AdminPage() {
         });
         setMusicUrls({
             spotify: evt.music_urls?.spotify || '',
-            youtube: evt.music_urls?.youtube || ''
+            youtube: evt.music_urls?.youtube || '',
+            background_music: evt.music_urls?.background_music || ''
         });
         setSelectedStyle(evt.style_id || 'gold-premium');
         setVisibility(evt.section_visibility || defaultVisibility);
@@ -566,15 +567,22 @@ export default function AdminPage() {
                             </div>
 
                             <div>
-                                <h2 style={{ color: '#d4a843', fontFamily: 'serif', fontSize: '1.15rem' }}>🎵 Música (Spotify / YouTube)</h2>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: '1rem', marginTop: '0.5rem' }}>
-                                    <div>
-                                        <label style={labelStyle}>Link Spotify</label>
-                                        <input value={musicUrls.spotify} onChange={e => setMusicUrls(p => ({ ...p, spotify: e.target.value }))} placeholder="https://open.spotify.com/..." style={inputStyle} />
+                                <h2 style={{ color: '#d4a843', fontFamily: 'serif', fontSize: '1.15rem' }}>🎵 Música e Invitación</h2>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem', marginTop: '0.5rem' }}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: '1rem' }}>
+                                        <div>
+                                            <label style={labelStyle}>Sugerencia Spotify</label>
+                                            <input value={musicUrls.spotify} onChange={e => setMusicUrls(p => ({ ...p, spotify: e.target.value }))} placeholder="https://open.spotify.com/..." style={inputStyle} />
+                                        </div>
+                                        <div>
+                                            <label style={labelStyle}>Sugerencia YouTube</label>
+                                            <input value={musicUrls.youtube} onChange={e => setMusicUrls(p => ({ ...p, youtube: e.target.value }))} placeholder="https://youtube.com/..." style={inputStyle} />
+                                        </div>
                                     </div>
-                                    <div>
-                                        <label style={labelStyle}>Link YouTube</label>
-                                        <input value={musicUrls.youtube} onChange={e => setMusicUrls(p => ({ ...p, youtube: e.target.value }))} placeholder="https://youtube.com/..." style={inputStyle} />
+                                    <div style={{ background: 'rgba(212, 168, 67, 0.1)', padding: '1rem', borderRadius: '0.5rem', border: '1px solid rgba(212, 168, 67, 0.3)' }}>
+                                        <label style={{ ...labelStyle, color: '#f5e6c8' }}>🎧 Música de Fondo (Se reproduce al entrar)</label>
+                                        <p style={{ fontSize: '0.7rem', color: '#a08050', marginBottom: '0.5rem' }}>Copia el link de YouTube o Spotify que sonará automáticamente.</p>
+                                        <input value={musicUrls.background_music} onChange={e => setMusicUrls(p => ({ ...p, background_music: e.target.value }))} placeholder="https://youtube.com/watch?v=..." style={{ ...inputStyle, background: '#000' }} />
                                     </div>
                                 </div>
                             </div>

@@ -16,6 +16,7 @@ export interface ProgramItem {
 export interface MusicUrls {
     spotify?: string;
     youtube?: string;
+    background_music?: string;
 }
 
 export interface GiftRegistry {
@@ -65,7 +66,7 @@ export interface Guest {
     confirmed_at?: string;
 }
 
-export type ThemeId = 'gold-premium' | 'superhero' | 'princess' | 'unicorn' | 'kpop' | 'cyber-neon' | 'aurora-minimal' | 'stellar-dark' | 'gamer-neon' | 'butterfly' | 'spiderman';
+export type ThemeId = 'gold-premium' | 'superhero' | 'princess' | 'unicorn' | 'kpop' | 'cyber-neon' | 'aurora-minimal' | 'stellar-dark' | 'gamer-neon' | 'butterfly' | 'spiderman' | 'goku-ultrainstinto';
 
 export interface Theme {
     id: ThemeId;

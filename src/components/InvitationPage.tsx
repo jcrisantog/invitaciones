@@ -12,6 +12,7 @@ import { StellarDarkTemplate } from '@/components/templates/StellarDarkTemplate'
 import { GamerNeonTemplate } from '@/components/templates/GamerNeonTemplate';
 import { ButterflyTemplate } from '@/components/templates/ButterflyTemplate';
 import { SpidermanTemplate } from '@/components/templates/SpidermanTemplate';
+import { GokuUltraInstintoTemplate } from '@/components/templates/GokuUltraInstintoTemplate';
 
 export interface InvitationPageProps {
     event: Event;
@@ -47,6 +48,8 @@ export function InvitationPage(props: InvitationPageProps) {
             return <ButterflyTemplate {...props} />;
         case 'spiderman':
             return <SpidermanTemplate {...props} />;
+        case 'goku-ultrainstinto':
+            return <GokuUltraInstintoTemplate {...props} />;
         default:
             // Fallback
             return <GoldPremiumTemplate {...props} />;
