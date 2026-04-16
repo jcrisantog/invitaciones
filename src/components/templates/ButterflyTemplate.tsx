@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Event, Guest } from '@/types';
 import { getTheme } from '@/lib/themes';
@@ -23,9 +23,13 @@ interface ButterflyTemplateProps {
     confirmedCount: number;
 }
 
+type Stage = 'video' | 'welcome' | 'invitation';
+
 export function ButterflyTemplate({ event, guest, galleryUrls, confirmedCount }: ButterflyTemplateProps) {
-    const [entered, setEntered] = useState(false);
+    const [stage, setStage] = useState<Stage>('video');
+    const [isPlaying, setIsPlaying] = useState(false);
     const [isRsvpInView, setIsRsvpInView] = useState(false);
+    const videoRef = useRef<HTMLVideoElement>(null);
     const theme = getTheme(event.style_id);
     const vis = event.section_visibility;
 
@@ -33,18 +37,121 @@ export function ButterflyTemplate({ event, guest, galleryUrls, confirmedCount }:
         document.getElementById('rsvp-section')?.scrollIntoView({ behavior: 'smooth' });
     };
 
+    const handlePlay = () => {
+        if (videoRef.current) {
+            videoRef.current.play();
+            setIsPlaying(true);
+        }
+    };
+
+    const handleVideoEnd = () => {
+        // Fade out video then show welcome screen
+        setTimeout(() => setStage('welcome'), 600);
+    };
+
+    const handleSkip = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        handleVideoEnd();
+    };
+
     return (
         <ThemeEngine theme={theme}>
             <div className="min-h-screen" style={{ fontFamily: theme.fontBody }}>
                 <AnimatePresence mode="wait">
-                    {!entered ? (
-                        // --- WELCOME SCREEN ---
+
+                    {/* ── STAGE 1: VIDEO ── */}
+                    {stage === 'video' && (
+                        <motion.div
+                            key="video-stage"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.4 }}
+                            className="fixed inset-0 z-50 bg-black flex items-center justify-center"
+                        >
+                            <video
+                                ref={videoRef}
+                                src="/butterfly/video.mp4"
+                                className="w-full h-full object-cover"
+                                playsInline
+                                onEnded={handleVideoEnd}
+                                style={{ display: 'block' }}
+                            />
+
+                            {/* Play button overlay — shown until user taps */}
+                            <AnimatePresence>
+                                {!isPlaying && (
+                                    <motion.button
+                                        key="play-btn"
+                                        initial={{ opacity: 0, scale: 0.8 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 1.1 }}
+                                        transition={{ duration: 0.4 }}
+                                        onClick={handlePlay}
+                                        className="absolute inset-0 flex flex-col items-center justify-center gap-5"
+                                        style={{ background: 'rgba(0,0,0,0.45)' }}
+                                        aria-label="Reproducir video"
+                                    >
+                                        {/* Pulsing ring */}
+                                        <div className="relative flex items-center justify-center">
+                                            <span
+                                                className="absolute w-28 h-28 rounded-full animate-ping"
+                                                style={{ background: 'rgba(200,130,255,0.25)' }}
+                                            />
+                                            <span
+                                                className="w-20 h-20 rounded-full flex items-center justify-center shadow-2xl"
+                                                style={{
+                                                    background: 'linear-gradient(135deg, #b94fff 0%, #7a00cc 100%)',
+                                                    boxShadow: '0 0 40px rgba(180,80,255,0.6)',
+                                                }}
+                                            >
+                                                {/* Play triangle SVG */}
+                                                <svg
+                                                    viewBox="0 0 24 24"
+                                                    fill="white"
+                                                    className="w-9 h-9 ml-1"
+                                                >
+                                                    <path d="M8 5v14l11-7z" />
+                                                </svg>
+                                            </span>
+                                        </div>
+                                        <p
+                                            className="text-white/80 text-sm uppercase tracking-[0.25em]"
+                                            style={{ textShadow: '0 2px 8px rgba(0,0,0,0.8)' }}
+                                        >
+                                            Toca para reproducir
+                                        </p>
+                                    </motion.button>
+                                )}
+                            </AnimatePresence>
+
+                            {/* Skip button — only visible while playing */}
+                            <AnimatePresence>
+                                {isPlaying && (
+                                    <motion.button
+                                        key="skip-btn"
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        transition={{ delay: 3, duration: 0.5 }}
+                                        onClick={handleSkip}
+                                        className="absolute bottom-8 right-6 text-white/60 text-xs uppercase tracking-widest border border-white/20 px-4 py-2 rounded-full backdrop-blur-sm hover:text-white hover:border-white/50 transition-all duration-300"
+                                    >
+                                        Saltar intro ›
+                                    </motion.button>
+                                )}
+                            </AnimatePresence>
+                        </motion.div>
+                    )}
+
+                    {/* ── STAGE 2: WELCOME SCREEN (original) ── */}
+                    {stage === 'welcome' && (
                         <motion.div
                             key="welcome"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0, scale: 0.95 }}
-                            transition={{ duration: 0.5 }}
+                            transition={{ duration: 0.4 }}
                             className="min-h-screen flex flex-col items-center justify-center px-6 text-center"
                         >
                             <motion.div
@@ -68,20 +175,6 @@ export function ButterflyTemplate({ event, guest, galleryUrls, confirmedCount }:
                                 {guest.name}
                             </motion.h1>
 
-                            {event.style_id === 'gamer-neon' && (
-                                <motion.div
-                                    initial={{ scale: 0, rotate: -10 }}
-                                    animate={{ scale: 1, rotate: 0 }}
-                                    transition={{ delay: 0.8, type: 'spring' }}
-                                    className="mb-4 relative"
-                                >
-                                    <img src="/gamer-neon/avatar.png" alt="Gamer Avatar" className="w-48 h-48 mx-auto drop-shadow-[0_0_20px_rgba(249,115,22,0.5)]" />
-                                    <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-orange-600 text-white text-[10px] px-3 py-1 font-bold rounded-full animate-pulse border-2 border-white uppercase tracking-tighter">
-                                        PRESS START
-                                    </div>
-                                </motion.div>
-                            )}
-
                             <motion.div
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
@@ -93,7 +186,7 @@ export function ButterflyTemplate({ event, guest, galleryUrls, confirmedCount }:
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.9 }}
-                                className="mb-2 px-6 py-3 rounded-2xl bg-black/70 backdrop-blur-md border border-white/10"
+                                className="mb-6 px-6 py-3 rounded-2xl bg-black/70 backdrop-blur-md border border-white/10"
                             >
                                 <p className="theme-text-primary text-lg" style={{ fontFamily: theme.fontTitle }}>
                                     Cumpleaños de <strong className="theme-accent">{event.celebrant_name}</strong>
@@ -102,20 +195,23 @@ export function ButterflyTemplate({ event, guest, galleryUrls, confirmedCount }:
                                     {new Date(event.event_date).toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
                                 </p>
                             </motion.div>
+
                             <motion.button
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 1.3 }}
                                 whileTap={{ scale: 0.97 }}
                                 className="theme-btn-primary text-xl px-10 py-4"
-                                onClick={() => setEntered(true)}
+                                onClick={() => setStage('invitation')}
                                 style={{ fontFamily: theme.fontTitle }}
                             >
                                 ✨ Entrar
                             </motion.button>
                         </motion.div>
-                    ) : (
-                        // --- MAIN INVITATION ---
+                    )}
+
+                    {/* ── STAGE 3: FULL INVITATION ── */}
+                    {stage === 'invitation' && (
                         <motion.div
                             key="invitation"
                             initial={{ opacity: 0 }}
@@ -125,11 +221,6 @@ export function ButterflyTemplate({ event, guest, galleryUrls, confirmedCount }:
                         >
                             {/* Header Title */}
                             <div className="theme-bg-secondary py-10 px-6 text-center relative overflow-hidden">
-                                {event.style_id === 'gamer-neon' && (
-                                    <div className="absolute top-2 left-2 theme-accent opacity-30 text-[10px] font-mono">
-                                        HP 100/100<br />MP 50/50
-                                    </div>
-                                )}
                                 <motion.h1
                                     initial={{ opacity: 0, scale: 0.9, filter: 'blur(20px)' }}
                                     animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
@@ -140,11 +231,10 @@ export function ButterflyTemplate({ event, guest, galleryUrls, confirmedCount }:
                                     {event.celebrant_name}
                                 </motion.h1>
                                 <p className="theme-text-secondary text-sm uppercase tracking-widest mt-2">
-                                    {event.style_id === 'gamer-neon' ? '✦ LEVEL UP ✦' : 'Mi Cumpleaños'}
+                                    Mi Cumpleaños
                                 </p>
                             </div>
 
-                            {/* Increased spacing to space-y-20 to breathe more */}
                             <div className="px-5 py-8 space-y-24 max-w-lg mx-auto">
                                 <CountdownSection eventDate={event.event_date} />
                                 <EventInfoSection event={event} themeId={event.style_id} />
@@ -181,11 +271,12 @@ export function ButterflyTemplate({ event, guest, galleryUrls, confirmedCount }:
                             </div>
                         </motion.div>
                     )}
+
                 </AnimatePresence>
 
                 {/* Sticky RSVP FAB */}
                 <AnimatePresence>
-                    {entered && !isRsvpInView && (
+                    {stage === 'invitation' && !isRsvpInView && (
                         <motion.button
                             initial={{ scale: 0, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
